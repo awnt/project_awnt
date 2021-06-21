@@ -1,0 +1,525 @@
+---
+title: "bank customer churn"
+output: 
+  html_document: 
+    keep_md: yes
+---
+
+```{r message = FALSE, warning=FALSE}
+
+# install.packages("tidyverse")
+# install.packages("ggpubr")
+# install.packages("ggcorrplot")
+library(tidyverse)
+# tidyverse_update()
+library(cowplot)
+library(ggpubr)
+library(ggcorrplot)
+library(dplyr)
+```
+
+
+
+
+```{r message = FALSE, warning=FALSE}
+setwd("D:/Git/Project/Bank_churn/")
+```
+
+```{r}
+df<-read.csv("Bank_Churn_Modelling.csv")
+str(df)
+summary(df)
+print("null values: ")
+colSums(is.na(df)) 
+```
+
+```{r}
+
+df <- df %>%
+  dplyr::select(-c(RowNumber,CustomerId,Surname)) %>%
+  mutate(Geography=as.factor(Geography),
+         Gender=as.factor(Gender),
+         Tenure=as.factor(Tenure),
+         NumOfProducts=as.factor(NumOfProducts),
+         HasCrCard = as.factor(HasCrCard),
+         IsActiveMember = as.factor(IsActiveMember),
+         Exited=as.factor(Exited))
+```
+
+x<-is.null(df)
+print(paste("null values: ",is.null(df)))
+
+
+bank %>% 
+select_if(function(col) is.numeric(col) | all(col == .$Churn)) %>%
+gather(key = "Variable", value = "Value", -Churn) %>% ggplot(aes(Value, fill = Churn)) + 
+geom_histogram(bins = 20) + 
+facet_wrap(~ Variable, scales = "free") + 
+labs( title = "Numerical variables histograms", x = "" ) + scale_fill_economist()
+
+```{r}
+df %>%
+  select(where(is.numeric),Exited)%>%
+  gather(key = "Variable", value = "Value",-Exited) %>%
+  ggplot(aes(Value,fill=Exited))+
+    facet_wrap(~Variable,scales="free")+
+    geom_histogram(bins=30,color='black')+
+    scale_fill_manual(values=c("cornflowerblue","brown"))
+df%>%
+  keep(is.numeric)%>%summary()
+
+
+```
+
+
+```{r}
+Age_box<-ggplot(data=df)+
+  geom_boxplot(mapping = aes(Exited,Age,fill=Exited),width=.5)+
+  scale_fill_manual(values=c("cornflowerblue","brown"))
+
+
+Balance_box<-ggplot(data=df)+
+  geom_boxplot(mapping = aes(Exited,Balance,fill=Exited),width=.5)+
+  scale_fill_manual(values=c("cornflowerblue","brown"))
+
+CreditScore_box<-ggplot(data=df)+
+  geom_boxplot(mapping = aes(Exited,CreditScore,fill=Exited),width=.5)+
+  scale_fill_manual(values=c("cornflowerblue","brown"))
+                    
+                    
+EstimatedSalary_box<-ggplot(data=df)+
+  geom_boxplot(mapping = aes(Exited,EstimatedSalary,fill=Exited),width=.5)+
+  scale_fill_manual(values=c("cornflowerblue","brown"))
+
+ggarrange(Age_box,Balance_box, CreditScore_box,EstimatedSalary_box,
+         ncol = 2, nrow = 2,common.legend = TRUE)
+
+```
+
+## Categorical 
+
+**Existed (Churn)** defined as predicted variable
+
+```{r}
+ggplot(df,aes(Exited))+
+  geom_bar(fill=c("cornflowerblue","brown"),width=0.4)+
+  coord_flip()+
+  theme(aspect.ratio = 0.3)
+
+    
+
+```
+
+**AGE**
+```{r}
+# df$Age_cat<-cut(df$Age, breaks=c(25,35,45,55,65,75,85), right = FALSE)
+df$Age_cat<-cut(df$Age, breaks=c(0,20,40,60,80,100), right = FALSE)
+df$Age_cat<-as.factor(df$Age_cat)
+# df$Age_cat<-factor(df$Age_cat,levels=c(1,2,3,4,5),labels=c("0-19","20-39","40-59","60-79","80-99"))
+# 
+glimpse(df)
+
+```
+
+
+```{r}
+Agecat_churn<-ggplot(data=df)+
+  geom_bar(mapping = aes(Age_cat,fill=Exited),position='fill',width=0.5)+
+  scale_x_discrete("Age_cat")+
+  scale_y_continuous("Percent")+
+  guides(fill=guide_legend(title="Churn"))+
+  scale_fill_manual(values=c("cornflowerblue","brown"))+
+  coord_flip()+
+  theme(aspect.ratio = 1)
+Agecat_cat<-ggplot(df,aes(Age_cat))+
+  geom_bar(fill="grey41",width=0.5)+
+  coord_flip()+
+  theme(aspect.ratio = 0.7)
+
+ggarrange(Agecat_churn, Agecat_cat,
+         ncol = 2, nrow = 1)
+```
+
+
+**Gender**
+
+```{r}
+
+Gender_churn<-ggplot(data=df)+
+  geom_bar(mapping = aes(Gender,fill=Exited),position='fill',width=0.5)+
+  scale_x_discrete("Gender")+
+  scale_y_continuous("Percent")+
+  guides(fill=guide_legend(title="Churn"))+
+  scale_fill_manual(values=c("cornflowerblue","brown"))+
+  coord_flip()+
+  theme(aspect.ratio = 0.7)
+Gender_cat<-ggplot(df,aes(Gender))+
+  geom_bar(fill="grey41",width=0.5)+
+  coord_flip()+
+  theme(aspect.ratio = 0.5)
+# Gender_cat2<-ggplot(data=df)+
+#   geom_bar(mapping = aes(Gender,fill=Exited),width=0.5)+
+#   scale_x_discrete("Gender")+
+#   scale_y_continuous("Percent")+
+#   guides(fill=guide_legend(title="Churn"))+
+#   scale_fill_manual(values=c("grey41","brown"))+
+#   coord_flip()+
+#   theme(aspect.ratio = 0.7)
+
+ggarrange(Gender_churn, Gender_cat,
+         ncol = 2, nrow = 1)
+
+
+                   
+```
+
+
+**Location**
+```{r}
+Location_churn<-ggplot(data=df)+
+  geom_bar(mapping = aes(Geography,fill=Exited),position='fill',width=0.5)+
+  scale_x_discrete("Geography")+
+  scale_y_continuous("Percent")+
+  guides(fill=guide_legend(title="Churn"))+
+  scale_fill_manual(values=c("cornflowerblue","brown"))+
+  coord_flip()+
+  theme(aspect.ratio = 1)
+Location_cat<-ggplot(df,aes(Geography))+
+  geom_bar(fill="grey41",width=0.5)+
+  coord_flip()+
+  theme(aspect.ratio = 0.7)
+
+ggarrange(Location_churn, Location_cat,
+         ncol = 2, nrow = 1)
+```
+
+
+**Number of Products**
+```{r}
+
+Product_churn<-ggplot(data=df)+
+  geom_bar(mapping = aes(factor(NumOfProducts),fill=factor(Exited)),position='fill',width=0.7)+
+  scale_x_discrete("NumofProducts")+
+  scale_y_continuous("Percent")+
+  guides(fill=guide_legend(title="Churn"))+
+  scale_fill_manual(values=c("cornflowerblue","brown"))+
+  coord_flip()+
+  theme(aspect.ratio = 0.8)
+Product_cat<-ggplot(df,aes(NumOfProducts))+
+  geom_bar(fill="grey41",width=0.6)+
+  coord_flip()+
+  theme(aspect.ratio = 0.6)
+
+ggarrange(Product_churn, Product_cat,
+         ncol = 2, nrow = 1)
+  
+```
+
+**Credit Card**
+```{r}
+Creditcard_churn<-ggplot(data=df)+
+  geom_bar(mapping = aes(factor(HasCrCard),fill=factor(Exited)),position='fill',width=0.4)+
+  scale_x_discrete("CreditCard")+
+  scale_y_continuous("Percent")+
+  guides(fill=guide_legend(title="Churn"))+
+  scale_fill_manual(values=c("cornflowerblue","brown"))+
+  coord_flip()+
+  theme(aspect.ratio = 1)
+  
+Creditcard_cat<-ggplot(df,aes(factor(HasCrCard)))+
+  geom_bar(width=0.4,fill='grey41')+
+  theme(legend.position = "left")+
+  coord_flip()+
+  theme(aspect.ratio = 0.8)
+
+ggarrange(Creditcard_churn, Creditcard_cat,
+         ncol = 2, nrow = 1)    
+
+```
+**Active Member**
+```{r}
+
+Active_churn<-ggplot(data=df)+
+  geom_bar(mapping = aes(IsActiveMember,fill=Exited),position='fill',width=0.4)+
+  scale_x_discrete("IsActiveMember")+
+  scale_y_continuous("Percent")+
+  guides(fill=guide_legend(title="Churn"))+
+  coord_flip()+
+  scale_fill_manual(values=c("cornflowerblue","brown"))+
+ theme(aspect.ratio = 1)
+
+Active_cat<-ggplot(df,aes(IsActiveMember))+
+  geom_bar(width=0.4,fill='grey51')+
+  theme(legend.position = "left")+
+  coord_flip()+
+  theme(aspect.ratio = 0.8)
+ggarrange(Active_churn, Active_cat,
+         ncol = 2, nrow = 1)
+```
+
+**Tenure**
+```{r}
+
+Tenure_churn<-ggplot(data=df)+
+  geom_bar(mapping = aes(Tenure,fill=Exited),position='fill',width=0.5)+
+  scale_x_discrete("Tenure")+
+  scale_y_continuous("Percent")+
+  guides(fill=guide_legend(title="Churn"))+
+  scale_fill_manual(values=c("cornflowerblue","brown"))+
+ theme(aspect.ratio = 1)
+
+Tenure_cat<-ggplot(df,aes(Tenure))+
+  geom_bar(width=0.5,fill='grey51')+
+  theme(legend.position = "left")+
+  theme(aspect.ratio = 0.8)
+ggarrange(Tenure_churn,Tenure_cat,
+         ncol = 2, nrow = 1)
+```
+## chi-square test of independence
+
+**Gender**
+```{r}
+gender_table<- table(df$Gender,df$Exited,dnn=c('Gender','Churn'))
+round(prop.table(gender_table,margin =2),4)*100 #col margin
+round(prop.table(gender_table,margin =1),4)*100 #row margin
+chisq.test(df$Gender,df$Exited,correct=FALSE)
+```
+
+**Credit Card**
+
+```{r}
+
+creditcard_table<- table(df$HasCrCard,df$Exited,dnn=c('CreditCard','Churn'))
+round(prop.table(creditcard_table,margin =2),4)*100 #col margin
+round(prop.table(creditcard_table,margin =1),4)*100 #row margin
+chisq.test(df$HasCrCard,df$Exited,correct=FALSE)
+```
+**Num of Products**
+
+```{r}
+table(df$NumOfProducts,df$Exited)
+product_table<- table(df$NumOfProducts,df$Exited,dnn=c('#Product','Churn'))
+round(prop.table(product_table,margin =2),4)*100 #col margin
+round(prop.table(product_table,margin =1),4)*100 #row margin
+chisq.test(df$NumOfProducts,df$Exited,correct=FALSE)
+```
+
+**Active Member**
+
+```{r}
+table(df$IsActiveMember,df$Exited)
+active_table<- table(df$IsActiveMember,df$Exited,dnn=c('Active','Churn'))
+round(prop.table(active_table,margin =2),4)*100 #col margin
+round(prop.table(active_table,margin =1),4)*100 #row margin
+chisq.test(df$IsActiveMember,df$Exited,correct=FALSE)
+```
+
+**Location**
+```{r}
+table(df$Geography,df$Exited)
+
+location_table<- table(df$Geography,df$Exited,dnn=c('Location','Churn'))
+round(prop.table(location_table,margin =2),4)*100 #col margin
+round(prop.table(location_table,margin =1),4)*100 #row margin
+chisq.test(df$Geography,df$Exited,correct=FALSE)
+```
+
+**Tenure**
+```{r}
+table(df$Tenure,df$Exited)
+tenure_table<- table(df$Tenure,df$Exited,dnn=c('Tenure','Churn'))
+round(prop.table(tenure_table,margin =2),4)*100 #col margin
+round(prop.table(tenure_table,margin =1),4)*100 #row margin
+chisq.test(df$Tenure,df$Exited,correct=FALSE)
+```
+-c(HasCrCard,Tenure)
+
+
+```{r}
+df_model <- df %>%
+  dplyr::select(-c(HasCrCard,Tenure)) 
+
+```
+
+
+```{r}
+df %>%
+  select(where(is.numeric)) %>%
+  pairs()
+```
+
+**Logistic regression**
+```{r}
+logis_mod01<- glm(Exited ~., data = df, family = binomial)
+summary(logis_mod01)
+```
+```{r}
+logis_mod02<- glm(Exited ~.-Tenure-HasCrCard-CreditScore, data =df, family = binomial)
+summary(logis_mod02)
+
+```
+
+```{r}
+anova(logis_mod02,test='Chisq')
+```
+```{r}
+logis_mod03<- glm(Exited ~Age+NumOfProducts+Gender+Geography+IsActiveMember, data =df, family = binomial)
+summary(logis_mod03)
+
+```
+```{r}
+anova(logis_mod03,test='Chisq')
+`````{r}
+lm_01 <- glm(Exited ~., data = df_model, family = binomial)
+summary(lm_01)
+````
+
+
+
+
+
+
+```{r}
+library(caTools)
+set.seed(123)
+sample_data = sample.split(df_model, SplitRatio = 0.8)
+train_data <- subset(df_model, sample_data == TRUE)
+test_data <- subset(df_model, sample_data == FALSE)
+
+```
+
+```{r}
+#Logistic regression(full model)
+logis_full<- glm(Exited ~., data = train_data, family = binomial)
+summary(logis_full)
+anova(logis_full,test='Chisq')
+```
+
+```{r}
+#result_#Logistic regression(full model)
+result_full<-predict(logis_full,test_data,type="response")
+predict_full<-ifelse(result_full>0.5,"1","0")
+(confusion<-table(predict=predict_full,actual=test_data$Exited))
+full_accuracy<-round(mean(predict_full==test_data$Exited),3) #model accuracy
+print(paste('Logistic Regression (full) Accuracy',full_accuracy))
+```
+
+
+```{r}
+library(MASS)
+logis_step <-logis_full %>% stepAIC(trace = FALSE)
+coef(logis_step)
+```
+
+```{r}
+#predictions
+result_step <- predict(logis_step,test_data,type="response")
+predict_step <- ifelse(result_step >0.5,"1","0")
+table(Predict=predict_step,Actual=test_data$Exited)
+step_accuracy<-round(mean(predict_step==test_data$Exited),3)#accuracy
+print(paste('Logistic Regression (Stepwise) Accuracy',step_accuracy))
+      
+```
+
+
+```{r}
+library(caret)
+train_ctr <- trainControl(method = 'cv', number = 10, classProbs = TRUE, summaryFunction = twoClassSummary)
+Logistic_model_t <- train(Exited ~ .,data = train_data, method = 'glm',family = 'binomial',trControl = train_ctr, metric = 'ROC')
+```
+
+```{r}
+# install.packages("randomForest")
+library(randomForest)
+```
+
+```{r}
+# load caret
+library(caret)# define parameters used in training data
+my_control <- trainControl(method = "repeatedcv", 
+                           number = 5,
+                           repeats = 5, 
+                           verboseIter = TRUE, 
+                           summaryFunction = twoClassSummary, 
+                           classProbs = TRUE)
+# train random forest
+
+```
+
+
+
+```{r}
+rf_full<- randomForest(Exited ~., data = train_data)
+print(rf_full)
+```
+
+
+
+
+```{r}
+# install.packages('rpart')
+# install.packages('partykit')
+# install.packages('caTools')
+library(caTools)
+library(rpart)
+library(rpart.plot)
+library(party)
+library(partykit)
+```
+
+
+
+Decision Tree
+```{r}
+set.seed(123)
+sample_data = sample.split(df_model, SplitRatio = 0.75)
+train_data <- subset(df_model, sample_data == TRUE)
+test_data <- subset(df_model, sample_data == FALSE)
+
+rtree <- rpart(Exited ~ ., data=train_data)
+rpart.plot(rtree)
+```
+```{r}
+ctree_ <- ctree(Exited ~ ., train_data)
+plot(ctree_)
+```
+
+
+```{r}
+# Predict the values of the test set: pred
+pred <- predict(rtree, test_data, type = "class")
+
+# Construct the confusion matrix: conf
+confusion <- table(test_data$Exited, pred)
+
+# Print out the accuracy
+print(confusion)
+print(sum(diag(confusion)) / sum(confusion))
+
+```
+random forest
+
+```{r}
+# install.packages("randomForest")
+library(randomForest)
+```
+
+```{r}
+
+rfmod <- randomForest(Exited ~ ., data = train_data, importance = T)
+rfmod
+predTrain <- predict(rfmod, train_data, type = "class")
+table(predTrain, train_data$Exited)
+predTest <- predict(rfmod, test_data, type = "class")
+rfacc <- mean(predTest == test_data$Exited)
+rfacc
+table(predTest, test_data$Exited)
+
+# Construct the confusion matrix: conf
+confusion <- table(test_data$Exited, predTest)
+
+# Print out the accuracy
+print(confusion)
+print(sum(diag(confusion)) / sum(confusion))
+```
+
